@@ -15,7 +15,7 @@ fn main() {
     let to_animate = fs::read_to_string("text_to_animate.txt")
         .expect("Should have been able to read the file");
     stdout().execute(Hide).unwrap();
-    let parts: Vec<(usize, &str)> = to_animate.split("--NEXT--").enumerate().collect();
+    let parts: Vec<(usize, &str)> = to_animate.split("\r\n--NEXT--\r\n").enumerate().collect();
     for (i, part) in &parts {
         animate(&part, Duration::from_millis(10));
         if i != &(parts.len() - 1) {
