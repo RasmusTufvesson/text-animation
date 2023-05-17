@@ -1,78 +1,67 @@
-use std::fs;
-use std::io::stdout;
-use std::io::Write;
-use std::process::Command;
+use std::io::{stdout};
 use std::thread;
 use std::time::Duration;
+use crossterm::event::{KeyEvent, Event, read, KeyEventKind};
+use crossterm::terminal::{enable_raw_mode, disable_raw_mode};
 use crossterm::{
     ExecutableCommand,
-    cursor::{Hide, Show}
+    cursor::{Hide, Show},
 };
+use render::Font;
+use clap::Parser;
 
-const CHARSET: &str = "!\"#$%&'()*+,-_./\\|0123456789:;<=>?@abcdefghijklmnopqrstuvwxyz[£]↑←─♠╮╰╯╲╱●♥╭╳○♣♦┼│π◥▌▄▔▁▏▒▕◤├▗└┐▂┌┴┬┤▎▍▃▖▝┘▘▚─";
+mod render;
+mod animate;
+
+#[derive(Parser)]
+#[command(author, version, about, long_about = None)]
+struct Cli {
+    text: String,
+    framerate: u64,
+    delay: Option<u64>
+}
 
 fn main() {
-    let to_animate = fs::read_to_string("text_to_animate.txt")
-        .expect("Should have been able to read the file");
+    let cli: Cli = Cli::parse();
+    run(&cli.text, cli.framerate, cli.delay); // example framerate 10 delay 500
+}
+
+fn run(text: &String, framerate: u64, delay: Option<u64>) {
     stdout().execute(Hide).unwrap();
-    let parts: Vec<(usize, &str)> = to_animate.split("\r\n--NEXT--\r\n").enumerate().collect();
+    enable_raw_mode().unwrap();
+    let chars: String = include_str!("font").replace("\r", "");
+    let chars: Vec<&str> = chars.split("\n--NEXT-LETTER--\n").collect();
+    let height = chars[0].split("\n").collect::<Vec<&str>>().len() as u32;
+    let font: Font = Font::new(chars, height);
+    let parts: Vec<(usize, String)> = text.split(", ").map(|string| render::frame(&font.render(string))).enumerate().collect();
     for (i, part) in &parts {
-        animate(&part, Duration::from_millis(10));
+        animate::animate(part, Duration::from_millis(framerate));
         if i != &(parts.len() - 1) {
-            thread::sleep(Duration::from_millis(500));
-        }
-    }
-    stdout().execute(Show).unwrap();
-}
-
-fn find(string: &str, char: char) -> Option<usize> {
-    string.chars().position(|c| c == char)
-}
-
-fn animate(image: &str, speed: Duration) {
-    let mut frames = 0;
-    let mut done = false;
-    while !done {
-        let mut frame = String::new();
-        let mut x: i32 = 0;
-        let mut y: i32 = 0;
-        for c in image.chars() {
-            let char_lower = c.to_ascii_lowercase();
-            if CHARSET.contains(char_lower) {
-                let index: i32 = find(CHARSET, char_lower).unwrap() as i32;
-                let dist = x + y;
-                let display_index = i32::min(index, frames - dist);
-                if display_index >= 0 {
-                    let index = display_index as usize;
-                    frame.push(if c.is_lowercase() { CHARSET.chars().nth(index).unwrap() } else {
-                        match CHARSET.chars().nth(index) {
-                            Some(str) => {str.to_ascii_uppercase()}
-                            None => {panic!("): {} > {}, {}", (frames - dist), CHARSET.find(char_lower).unwrap(), char_lower)}
-                        }
-                    });
-                } else {
-                    frame.push(' ');
+            match delay {
+                Some(dur) => {
+                    thread::sleep(Duration::from_millis(dur));
                 }
-            } else {
-                frame.push(c);
-                if c == '\n' {
-                    y += 1;
-                    x = -1;
+                None => {
+                    pause();
                 }
             }
-            x += 1;
-        }
-        clear_terminal();
-        print!("{}", frame);
-        stdout().flush().unwrap();
-        thread::sleep(speed);
-        frames += 1;
-        if frame == image {
-            done = true;
         }
     }
+    pause();
+    stdout().execute(Show).unwrap();
+    disable_raw_mode().unwrap();
 }
 
-fn clear_terminal() {
-    Command::new("cmd").arg("/C").arg("cls").status().unwrap();
+fn pause() {
+    loop {
+        match read().unwrap() {
+            Event::Key(KeyEvent {
+                code: _,
+                modifiers: _,
+                kind: KeyEventKind::Press,
+                state: _,
+            }) => return,
+            _ => (),
+        }
+    }
 }

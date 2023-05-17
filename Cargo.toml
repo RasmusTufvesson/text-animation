@@ -4,4 +4,11 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+clap = { version = "4.2.7", features = ["derive"] }
 crossterm = "0.26.1"
+
+[profile.release]
+strip = true
+lto = true
+codegen-units = 1
+panic = "abort"
