@@ -28,12 +28,12 @@ fn main() {
     run(&cli.text, cli.framerate, cli.delay, cli.frame); // example framerate 10 delay 500
 }
 
-fn run(text: &String, framerate: u64, delay: Option<u64>, frame: bool) {
+fn run(text: &str, framerate: u64, delay: Option<u64>, frame: bool) {
     stdout().execute(Hide).unwrap();
     enable_raw_mode().unwrap();
-    let chars: String = include_str!("font").replace("\r", "");
+    let chars: String = include_str!("font").replace('\r', "");
     let chars: Vec<&str> = chars.split("\n--NEXT-LETTER--\n").collect();
-    let height = chars[0].split("\n").collect::<Vec<&str>>().len() as u32;
+    let height = chars[0].split('\n').collect::<Vec<&str>>().len() as u32;
     let font: Font = Font::new(chars, height);
     let parts: Vec<(usize, String)> = match frame {
         true => {
@@ -63,14 +63,11 @@ fn run(text: &String, framerate: u64, delay: Option<u64>, frame: bool) {
 
 fn pause() {
     loop {
-        match read().unwrap() {
-            Event::Key(KeyEvent {
-                code: _,
-                modifiers: _,
-                kind: KeyEventKind::Press,
-                state: _,
-            }) => return,
-            _ => (),
-        }
+        if let Event::Key(KeyEvent {
+            code: _,
+            modifiers: _,
+            kind: KeyEventKind::Press,
+            state: _,
+        }) = read().unwrap() { return }
     }
 }
