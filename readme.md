@@ -7,7 +7,7 @@ The program takes 2 required arguments and 1 optional:
 | --------- | ------------ |
 | Text      | Specifies what text the program should animate. There can be multiple pieces of text animated after each other and the pieces are separated by ", ". To have a new line in the text simply put "\n". |
 | Framerate | How long the program should wait between frames in milliseconds. |
-| Delay     | How long the delay between pieces of text should be, if not provided it will wait for a key press instead. |
+| Delay     | How long the delay between pieces of text should be in milliseconds, if not provided it will wait for a key press instead. |
 
 Additionaly the program takes 1 flag:
 | Flag       | What it does |
