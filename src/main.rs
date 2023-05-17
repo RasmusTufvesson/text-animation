@@ -18,22 +18,31 @@ mod animate;
 struct Cli {
     text: String,
     framerate: u64,
-    delay: Option<u64>
+    delay: Option<u64>,
+    #[clap(long, short, action)]
+    frame: bool,
 }
 
 fn main() {
     let cli: Cli = Cli::parse();
-    run(&cli.text, cli.framerate, cli.delay); // example framerate 10 delay 500
+    run(&cli.text, cli.framerate, cli.delay, cli.frame); // example framerate 10 delay 500
 }
 
-fn run(text: &String, framerate: u64, delay: Option<u64>) {
+fn run(text: &String, framerate: u64, delay: Option<u64>, frame: bool) {
     stdout().execute(Hide).unwrap();
     enable_raw_mode().unwrap();
     let chars: String = include_str!("font").replace("\r", "");
     let chars: Vec<&str> = chars.split("\n--NEXT-LETTER--\n").collect();
     let height = chars[0].split("\n").collect::<Vec<&str>>().len() as u32;
     let font: Font = Font::new(chars, height);
-    let parts: Vec<(usize, String)> = text.split(", ").map(|string| render::frame(&font.render(string))).enumerate().collect();
+    let parts: Vec<(usize, String)> = match frame {
+        true => {
+            text.split(", ").map(|string| render::frame(&font.render(string))).enumerate().collect()
+        }
+        false => {
+            text.split(", ").map(|string| font.render(string)).enumerate().collect()
+        }
+    };
     for (i, part) in &parts {
         animate::animate(part, Duration::from_millis(framerate));
         if i != &(parts.len() - 1) {

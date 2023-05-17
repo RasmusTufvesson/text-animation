@@ -17,7 +17,7 @@ impl<'a> Font<'a> {
         let mut top_row_index = 0;
         let mut max_width: usize = 0;
         let mut last_char = ' ';
-        for render_char in to_render.chars() {
+        for render_char in to_render.to_lowercase().chars() {
             let render_str: &str = &render_char.to_string();
             if render_str == "\n" || (render_str == "n" && last_char == '\\') {
                 top_row_index += self.char_height as usize;
